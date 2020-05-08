@@ -146,7 +146,7 @@ public class Instagram4j implements Serializable {
 	 */
 	@Builder
 	public Instagram4j(String username, String password, long userId, String uuid, CookieStore cookieStore,
-			HttpHost proxy, CredentialsProvider credentialsProvider) {
+			HttpHost proxy, CredentialsProvider credentialsProvider, CloseableHttpClient client) {
 		super();
 		this.username = username;
 		this.password = password;
@@ -156,6 +156,7 @@ public class Instagram4j implements Serializable {
 		this.proxy = proxy;
 		this.credentialsProvider = credentialsProvider;
 		this.isLoggedIn = true;
+		this.client = client;
 	}
 
 	/**
@@ -187,16 +188,18 @@ public class Instagram4j implements Serializable {
 		}
 
 		log.info("Device ID is: " + this.deviceId + ", random id: " + this.uuid);
-		HttpClientBuilder builder = HttpClientBuilder.create();
-		if (proxy != null) {
-			builder.setProxy(proxy);
+		if (this.client == null) {
+			HttpClientBuilder builder = HttpClientBuilder.create();
+			if (proxy != null) {
+				builder.setProxy(proxy);
+			}
+
+			if (credentialsProvider != null)
+				builder.setDefaultCredentialsProvider(credentialsProvider);
+
+			builder.setDefaultCookieStore(this.cookieStore);
+			this.client = builder.build();
 		}
-
-		if (credentialsProvider != null)
-			builder.setDefaultCredentialsProvider(credentialsProvider);
-
-		builder.setDefaultCookieStore(this.cookieStore);
-		this.client = builder.build();
 	}
 
 	/**
